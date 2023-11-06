@@ -17,8 +17,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const page = tabs[0].title;
 
       // Request selected text from the content script
-      chrome.runtime.sendMessage({ action: "getSelectedText" }, function (selectedText) {
-        if (selectedText.trim() !== "") {
+      chrome.scripting.sendMessage({
+        tabId: tabs[0].id,
+        func: { name: "getSelectedText" }
+      }, function (selectedText) {
+        if (selectedText && selectedText.trim() !== "") {
           const comment = prompt('Enter a comment for this bookmark:');
           if (comment !== null) {
             const bookmark = { page, comment, selectedText };
