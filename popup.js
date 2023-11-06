@@ -16,15 +16,8 @@ document.addEventListener('DOMContentLoaded', function () {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       const page = tabs[0].title;
 
-      // Prompt user for text selection
-      chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        function: function () {
-          const selectedText = window.getSelection().toString();
-          return selectedText;
-        }
-      }, function (result) {
-        const selectedText = result[0];
+      // Request selected text from the content script
+      chrome.runtime.sendMessage({ action: "getSelectedText" }, function (selectedText) {
         if (selectedText.trim() !== "") {
           const comment = prompt('Enter a comment for this bookmark:');
           if (comment !== null) {
