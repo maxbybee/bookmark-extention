@@ -3,7 +3,8 @@
   "name": "PDF Bookmarks",
   "version": "1.0",
   "description": "Manage bookmarks for PDF pages.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "activeTab"],
+  "icons": {"48": "icon48.png", "128": "icon128.png"},
   "browser_action": {
     "default_icon": "icon.png",
     "default_popup": "popup.html"

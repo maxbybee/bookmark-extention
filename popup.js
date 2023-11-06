@@ -6,18 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Display bookmarks in the popup
     bookmarks.forEach(bookmark => {
-      const listItem = document.createElement('div');
-      listItem.textContent = bookmark.page + ': ' + bookmark.comment;
-
-      // Add a delete button for each bookmark
-      const deleteButton = document.createElement('button');
-      deleteButton.textContent = 'Delete';
-      deleteButton.addEventListener('click', function () {
-        deleteBookmark(bookmark);
-        listItem.remove();
-      });
-
-      listItem.appendChild(deleteButton);
+      const listItem = createBookmarkItem(bookmark);
       bookmarkList.appendChild(listItem);
     });
   });
@@ -26,28 +15,32 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('addBookmark').addEventListener('click', function () {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       const page = tabs[0].title;
-      const comment = prompt('Enter a comment for this bookmark:');
-      if (comment !== null) {
-        const bookmark = { page, comment };
 
-        // Save the bookmark to storage
-        saveBookmark(bookmark);
+      // Prompt user for text selection
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        function: function () {
+          const selectedText = window.getSelection().toString();
+          return selectedText;
+        }
+      }, function (result) {
+        const selectedText = result[0];
+        if (selectedText.trim() !== "") {
+          const comment = prompt('Enter a comment for this bookmark:');
+          if (comment !== null) {
+            const bookmark = { page, comment, selectedText };
 
-        // Add the bookmark to the popup
-        const listItem = document.createElement('div');
-        listItem.textContent = bookmark.page + ': ' + bookmark.comment;
+            // Save the bookmark to storage
+            saveBookmark(bookmark);
 
-        // Add a delete button for the bookmark
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', function () {
-          deleteBookmark(bookmark);
-          listItem.remove();
-        });
-
-        listItem.appendChild(deleteButton);
-        document.getElementById('bookmarkList').appendChild(listItem);
-      }
+            // Add the bookmark to the popup
+            const listItem = createBookmarkItem(bookmark);
+            document.getElementById('bookmarkList').appendChild(listItem);
+          }
+        } else {
+          alert("Please select some text on the page before adding a bookmark.");
+        }
+      });
     });
   });
 
@@ -65,9 +58,28 @@ document.addEventListener('DOMContentLoaded', function () {
     chrome.storage.sync.get(['bookmarks'], function (result) {
       const bookmarks = result.bookmarks || [];
       const updatedBookmarks = bookmarks.filter(bookmark => {
-        return !(bookmark.page === bookmarkToDelete.page && bookmark.comment === bookmarkToDelete.comment);
+        return !(bookmark.page === bookmarkToDelete.page &&
+          bookmark.comment === bookmarkToDelete.comment &&
+          bookmark.selectedText === bookmarkToDelete.selectedText);
       });
       chrome.storage.sync.set({ 'bookmarks': updatedBookmarks });
     });
+  }
+
+  // Create a DOM element for displaying a bookmark
+  function createBookmarkItem(bookmark) {
+    const listItem = document.createElement('div');
+    listItem.textContent = bookmark.page + ': ' + bookmark.comment + ' (' + bookmark.selectedText + ')';
+
+    // Add a delete button for the bookmark
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', function () {
+      deleteBookmark(bookmark);
+      listItem.remove();
+    });
+
+    listItem.appendChild(deleteButton);
+    return listItem;
   }
 });
